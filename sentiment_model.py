@@ -8,10 +8,11 @@ sentiment_classifier = pipeline(
 )
 
 # Step 2: Example social media texts
+# Since I didn't find a suitable dataset, I used some sample of hotel reviews at: https://www.kaggle.com/datasets/datafiniti/hotel-reviews?select=Datafiniti_Hotel_Reviews.csv
 texts = [
-    "I love this company, their service is amazing!",
-    "The product is okay, nothing special.",
-    "Terrible experience, I will never use this service again."
+    "Our experience at Rancho Valencia was absolutely perfect from beginning to end!!!! We felt special and very happy during our stayed. I would come back in a heart beat!!!",
+    "Bad: Room size. Good: The close proximity to TD garden",
+    "We had no choice but to stay here when a tornado hit the area and most of Vineland was without power. They charged us 190 for one night, wouldn't accept my AAA card and after leaving, we found out, we had been charged for 4 cats (which we don't own) and for another person."
 ]
 
 # Step 3: Run inference
