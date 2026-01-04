@@ -1,6 +1,9 @@
 from fastapi import FastAPI, Form
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
+from prometheus_client import Counter, Histogram, generate_latest
+from starlette.responses import Response
+import time
 
 from src.model.sentiment_model import load_sentiment_model, predict_sentiment
 
@@ -8,6 +11,22 @@ app = FastAPI(
     title="Sentiment Analysis API",
     version="1.0.0",
     description="Minimal sentiment service for MLOps assignment"
+)
+
+REQUEST_COUNT = Counter(
+    "request_count_total",
+    "Total number of prediction requests"
+)
+
+REQUEST_LATENCY = Histogram(
+    "request_latency_seconds",
+    "Latency of prediction requests"
+)
+
+SENTIMENT_COUNT = Counter(
+    "sentiment_predictions_total",
+    "Sentiment prediction count",
+    ["label"]
 )
 
 # Load model once at startup (critical for performance)
@@ -22,8 +41,22 @@ def health():
 
 @app.post("/predict")
 def predict(req: PredictRequest):
+    start_time = time.time()
+    REQUEST_COUNT.inc()
+
     labels = predict_sentiment(model, req.texts)
+
+    for label in labels:
+        SENTIMENT_COUNT.labels(label=label).inc()
+
+    REQUEST_LATENCY.observe(time.time() - start_time)
+
     return {"predictions": labels}
+
+"""" Prometheus metrics endpoint"""
+@app.get("/metrics")
+def metrics():
+    return Response(generate_latest(), media_type="text/plain")
 
 @app.get("/", response_class=HTMLResponse)
 def home():
@@ -46,7 +79,13 @@ def home():
 
 @app.post("/predict_ui", response_class=HTMLResponse)
 def predict_ui(text: str = Form(...)):
+    start_time = time.time()
+    REQUEST_COUNT.inc()
+
     label = predict_sentiment(model, [text])[0]
+    SENTIMENT_COUNT.labels(label=label).inc()
+
+    REQUEST_LATENCY.observe(time.time() - start_time)
 
     return f"""
     <html>
